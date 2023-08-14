@@ -22,6 +22,7 @@ class CaixaDaLanchonete {
 
     calcularValorDaCompra(formaDePagamento, itens) {
         let total = 0;
+        const itensPrincipaisPedidos = new Set();
 
         if (itens.length === 0) {
             return "Não há itens no carrinho de compra!";
@@ -35,34 +36,38 @@ class CaixaDaLanchonete {
                 return "Item inválido!";
             }
 
-            total += itemValor * quantidade;
-        }
+            if (codigo !== "chantily" && codigo !== "queijo") {
+                itensPrincipaisPedidos.add(codigo);
+            }
 
-        if (formaDePagamento === "dinheiro") {
-            total -= total * this.descontos.dinheiro;
-        } else if (formaDePagamento === "credito") {
-            total += total * this.acrescimos.credito;
-        } else if (formaDePagamento !== "debito") {
-            return "Forma de pagamento inválida!";
-        }
+            if (quantidade <= 0) {
+                return "Quantidade inválida!";
+            }
 
-        const formattedTotal = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        return formattedTotal;
+            if (codigo.startsWith("combo")) {
+                const comboItems = codigo.split("-");
+                for (const comboItem of comboItems) {
+                    const comboItemValor = this.cardapio[comboItem];
+                    if (!comboItemValor) {
+                        return "Item inválido!";
+                    }
+                    total += comboItemValor * quantidade;
+                }
+            } else {
+                total += itemValor * quantidade;
+            }
+
+            if (formaDePagamento === "dinheiro") {
+                total -= total * this.descontos.dinheiro;
+            } else if (formaDePagamento === "credito") {
+                total += total * this.acrescimos.credito;
+            } else if (formaDePagamento !== "debito") {
+                return "Forma de pagamento inválida!";
+            }
+
+            const formattedTotal = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            return formattedTotal;
+        }
     }
+
 }
-
-export default CaixaDaLanchonete;
-
-// arquivo caixa-da-lanchonete.test.js
-
-import CaixaDaLanchonete from './caixa-da-lanchonete.js';
-
-describe("CaixaDaLanchonete", () => {
-    it("deve calcular o valor da compra com sucesso", () => {
-        const caixa = new CaixaDaLanchonete();
-        const itens = ["cafe,2", "sanduiche,1", "suco,3"];
-        const metodoDePagamento = "credito";
-        const valorTotal = caixa.calcularValorDaCompra(metodoDePagamento, itens);
-        expect(valorTotal).toEqual("R$ 36,56");
-    });
-});
